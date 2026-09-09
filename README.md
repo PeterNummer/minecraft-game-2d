@@ -2,6 +2,11 @@
 
 Ein kleines Minecraft-inspiriertes 2D-Browserspiel.
 
+## 🤖 Hinweis zur Entwicklung
+
+Dieses Projekt wurde mit Unterstützung von KI erstellt.
+Die Spielidee und Anpassungen stammen vom Entwickler.
+
 ## 🕹️ Steuerung
 
 - WASD oder Pfeiltasten – bewegen
