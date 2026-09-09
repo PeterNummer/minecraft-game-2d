@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minecraft Game 2D</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #87ceeb; font-family: Arial, sans-serif; }
+  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; touch-action: none; }
+  #hud {
+    position: fixed; left: 12px; top: 12px; z-index: 5;
+    background: rgba(0,0,0,.55); color: white; padding: 9px 12px;
+    border-radius: 8px; font-size: 15px; line-height: 1.45;
+    user-select: none;
+  }
+  #help {
+    position: fixed; right: 12px; top: 12px; z-index: 5;
+    background: rgba(0,0,0,.55); color: white; padding: 9px 12px;
+    border-radius: 8px; font-size: 13px; text-align: right;
+  }
+  #touch {
+    position: fixed; inset: auto 0 18px 0; z-index: 10;
+    display: none; justify-content: space-between; padding: 0 18px;
+    pointer-events: none;
+  }
+  .pad, .actions { display: flex; gap: 8px; pointer-events: auto; }
+  button {
+    border: 2px solid rgba(255,255,255,.75); border-radius: 12px;
+    background: rgba(0,0,0,.55); color: white; min-width: 54px; min-height: 54px;
+    font-size: 21px; font-weight: bold; touch-action: none;
+  }
+  @media (max-width: 800px), (pointer: coarse) {
+    #touch { display: flex; }
+    #help { display: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud"></div>
+<div id="help">
+  WASD / Pfeile = bewegen<br>
+  Linksklick = Block abbauen<br>
+  Rechtsklick = Block setzen<br>
+  R = Neustart
+</div>
+<div id="touch">
+  <div class="pad">
+    <button data-key="ArrowLeft">◀</button>
+    <button data-key="ArrowRight">▶</button>
+    <button data-key="ArrowUp">▲</button>
+    <button data-key="ArrowDown">▼</button>
+  </div>
+  <div class="actions">
+    <button id="breakBtn">⛏</button>
+    <button id="placeBtn">🧱</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
+const hud = document.getElementById("hud");
+
+let W = 0, H = 0;
+function resize() {
+  W = canvas.width = Math.max(640, innerWidth);
+  H = canvas.height = Math.max(360, innerHeight);
+}
+addEventListener("resize", resize);
+resize();
+
+const TILE = 32;
+const WORLD_W = 180;
+const WORLD_H = 45;
+const GRAVITY = 0.48;
+const SPEED = 3.3;
+const JUMP = 9.8;
+
+const blocks = {
+  air: 0, grass: 1, dirt: 2, stone: 3, wood: 4, leaves: 5, sand: 6
+};
+const colors = {
+  grass: "#55a630", dirt: "#8b5a2b", stone: "#777",
+  wood: "#8d5a2f", leaves: "#2e8b57", sand: "#d9bd70"
+};
+
+const world = Array.from({length: WORLD_H}, () => Array(WORLD_W).fill(blocks.air));
+const surface = Array(WORLD_W).fill(0);
+
+function generateWorld() {
+  let y = 24;
+  for (let x = 0; x < WORLD_W; x++) {
+    y += Math.floor(Math.random() * 3) - 1;
+    y = Math.max(18, Math.min(29, y));
+    surface[x] = y;
+    for (let yy = y; yy < WORLD_H; yy++) {
+      if (yy === y) world[yy][x] = blocks.grass;
+      else if (yy < y + 4) world[yy][x] = blocks.dirt;
+      else world[yy][x] = blocks.stone;
+    }
+  }
+  // Sand patches
+  for (let i = 0; i < 8; i++) {
+    const x = 8 + Math.floor(Math.random() * (WORLD_W - 16));
+    for (let dx = -2; dx <= 2; dx++) {
+      const xx = x + dx;
+      if (xx > 0 && xx < WORLD_W) {
+        const sy = surface[xx];
+        world[sy][xx] = blocks.sand;
+        for (let yy = sy + 1; yy < sy + 3 && yy < WORLD_H; yy++) world[yy][xx] = blocks.sand;
+      }
+    }
+  }
+  // Trees
+  for (let x = 6; x < WORLD_W - 6; x += 7 + Math.floor(Math.random()*7)) {
+    if (Math.random() < .65) {
+      const sy = surface[x];
+      for (let i = 1; i <= 4; i++) if (sy-i >= 0) world[sy-i][x] = blocks.wood;
+      for (let dx = -2; dx <= 2; dx++)
+        for (let dy = 1; dy <= 3; dy++)
+          if (Math.abs(dx) + dy < 5 && sy-4-dy >= 0) world[sy-4-dy][x+dx] = blocks.leaves;
+    }
+  }
+}
+generateWorld();
+
+const player = {
+  x: 6*TILE, y: (surface[6]-2)*TILE,
+  w: 22, h: 30, vx: 0, vy: 0, onGround: false,
+  lives: 3, score: 0, blocks: 12, invuln: 0
+};
+
+let enemies = [];
+for (let i = 0; i < 10; i++) {
+  const x = 18 + Math.floor(Math.random()*110);
+  enemies.push({
+    x: x*TILE, y: (surface[x]-2)*TILE, w: 24, h: 24,
+    vx: 0, vy: 0, alive: true, dir: Math.random()<.5?-1:1
+  });
+}
+
+const keys = {};
+addEventListener("keydown", e => {
+  keys[e.key.toLowerCase()] = true;
+  if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(e.key.toLowerCase())) e.preventDefault();
+  if (e.key.toLowerCase() === "r") restart();
+});
+addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+function solidAt(tx, ty) {
+  if (tx < 0 || tx >= WORLD_W || ty >= WORLD_H) return true;
+  if (ty < 0) return false;
+  return world[ty][tx] !== blocks.air;
+}
+function rectCollides(x,y,w,h) {
+  const l = Math.floor(x/TILE), r = Math.floor((x+w-1)/TILE);
+  const t = Math.floor(y/TILE), b = Math.floor((y+h-1)/TILE);
+  for (let ty=t; ty<=b; ty++) for (let tx=l; tx<=r; tx++) if (solidAt(tx,ty)) return true;
+  return false;
+}
+function moveEntity(o) {
+  o.x += o.vx;
+  if (rectCollides(o.x,o.y,o.w,o.h)) {
+    if (o.vx > 0) o.x = Math.floor((o.x+o.w-1)/TILE)*TILE-o.w;
+    else if (o.vx < 0) o.x = (Math.floor(o.x/TILE)+1)*TILE;
+    o.vx = 0;
+  }
+  o.y += o.vy;
+  o.onGround = false;
+  if (rectCollides(o.x,o.y,o.w,o.h)) {
+    if (o.vy > 0) {
+      o.y = Math.floor((o.y+o.h-1)/TILE)*TILE-o.h;
+      o.onGround = true;
+    } else if (o.vy < 0) o.y = (Math.floor(o.y/TILE)+1)*TILE;
+    o.vy = 0;
+  }
+}
+
+let camX = 0, camY = 0;
+let mouse = {x:0,y:0};
+canvas.addEventListener("mousemove", e => { mouse.x=e.clientX; mouse.y=e.clientY; });
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+canvas.addEventListener("mousedown", e => {
+  if (e.button === 0) interact(false);
+  if (e.button === 2) interact(true);
+});
+
+function worldMouse() {
+  return { tx: Math.floor((mouse.x+camX)/TILE), ty: Math.floor((mouse.y+camY)/TILE) };
+}
+function nearPlayer(tx,ty) {
+  const cx=tx*TILE+TILE/2, cy=ty*TILE+TILE/2;
+  const px=player.x+player.w/2, py=player.y+player.h/2;
+  return Math.hypot(cx-px,cy-py) <= TILE*5;
+}
+function interact(place) {
+  const {tx,ty}=worldMouse();
+  if (tx<0||tx>=WORLD_W||ty<0||ty>=WORLD_H||!nearPlayer(tx,ty)) return;
+  if (!place) {
+    if (world[ty][tx] !== blocks.air) {
+      world[ty][tx]=blocks.air;
+      player.score += 2;
+      player.blocks++;
+    }
+  } else if (world[ty][tx]===blocks.air && player.blocks>0) {
+    if (!rectCollides(tx*TILE,ty*TILE,TILE,TILE)) {
+      world[ty][tx]=blocks.dirt;
+      player.blocks--;
+    }
+  }
+}
+
+function touchKey(key, down) { keys[key.toLowerCase()] = down; }
+document.querySelectorAll("[data-key]").forEach(b => {
+  const k=b.dataset.key;
+  b.addEventListener("pointerdown", e => { e.preventDefault(); touchKey(k,true); });
+  b.addEventListener("pointerup", e => { e.preventDefault(); touchKey(k,false); });
+  b.addEventListener("pointerleave", e => touchKey(k,false));
+});
+document.getElementById("breakBtn").addEventListener("pointerdown", e => {
+  e.preventDefault();
+  mouse.x = player.x + player.w/2 - camX + (player.vx>=0?TILE*1.2:-TILE*1.2);
+  mouse.y = player.y + player.h/2 - camY;
+  interact(false);
+});
+document.getElementById("placeBtn").addEventListener("pointerdown", e => {
+  e.preventDefault();
+  mouse.x = player.x + player.w/2 - camX + (player.vx>=0?TILE*1.2:-TILE*1.2);
+  mouse.y = player.y + player.h/2 - camY;
+  interact(true);
+});
+
+function hurt() {
+  if (player.invuln > 0) return;
+  player.lives--;
+  player.invuln = 90;
+  player.vy = -6;
+  if (player.lives <= 0) restart();
+}
+
+function update() {
+  let left = keys["a"] || keys["arrowleft"];
+  let right = keys["d"] || keys["arrowright"];
+  let jump = keys["w"] || keys["arrowup"] || keys[" "];
+
+  player.vx = left && !right ? -SPEED : right && !left ? SPEED : 0;
+  if (jump && player.onGround) player.vy = -JUMP;
+  player.vy += GRAVITY;
+  if (player.invuln > 0) player.invuln--;
+  moveEntity(player);
+
+  for (const e of enemies) {
+    if (!e.alive) continue;
+    const dx = player.x-e.x;
+    e.dir = dx<0?-1:1;
+    e.vx = e.dir*1.05;
+    e.vy += GRAVITY;
+    // Simple turn-around at walls/cliffs
+    if (e.onGround) {
+      const aheadX = Math.floor((e.x + (e.dir>0?e.w+3:-3))/TILE);
+      const footY = Math.floor((e.y+e.h+3)/TILE);
+      if (solidAt(aheadX, Math.floor(e.y/TILE)) || !solidAt(aheadX,footY)) e.dir *= -1;
+    }
+    moveEntity(e);
+    if (player.x < e.x+e.w && player.x+player.w > e.x && player.y < e.y+e.h && player.y+player.h > e.y) {
+      hurt();
+    }
+  }
+
+  if (player.y > WORLD_H*TILE) {
+    player.x=6*TILE; player.y=(surface[6]-3)*TILE; player.vy=0; hurt();
+  }
+
+  camX = Math.max(0, Math.min(WORLD_W*TILE-W, player.x-W*.45));
+  camY = Math.max(0, Math.min(WORLD_H*TILE-H, player.y-H*.45));
+}
+
+function drawBlock(x,y,type) {
+  const px=x*TILE-camX, py=y*TILE-camY;
+  if (px<-TILE||py<-TILE||px>W||py>H) return;
+  let c = type===blocks.grass?colors.grass:type===blocks.dirt?colors.dirt:
+          type===blocks.stone?colors.stone:type===blocks.wood?colors.wood:
+          type===blocks.leaves?colors.leaves:colors.sand;
+  ctx.fillStyle=c; ctx.fillRect(px,py,TILE,TILE);
+  if(type===blocks.grass){ctx.fillStyle="#3d8f32";ctx.fillRect(px,py,TILE,6);}
+  if(type===blocks.stone){
+    ctx.fillStyle="rgba(255,255,255,.12)";
+    for(let i=0;i<4;i++) ctx.fillRect(px+(i*9)%28+2,py+((i*13)%25)+2,3,3);
+  }
+  ctx.strokeStyle="rgba(0,0,0,.12)"; ctx.strokeRect(px+.5,py+.5,TILE-1,TILE-1);
+}
+
+function draw() {
+  // Sky gradient
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,"#5bb8ff"); g.addColorStop(1,"#d7f3ff");
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  // Clouds
+  ctx.fillStyle="rgba(255,255,255,.75)";
+  for(let i=0;i<8;i++){
+    const x=((i*410-camX*.15)%(W+220))-110, y=55+(i%3)*70;
+    ctx.fillRect(x,y,130,24); ctx.fillRect(x+25,y-15,50,40); ctx.fillRect(x+75,y-8,35,32);
+  }
+
+  const sx=Math.floor(camX/TILE), ex=Math.ceil((camX+W)/TILE);
+  const sy=Math.floor(camY/TILE), ey=Math.ceil((camY+H)/TILE);
+  for(let y=Math.max(0,sy);y<Math.min(WORLD_H,ey);y++)
+    for(let x=Math.max(0,sx);x<Math.min(WORLD_W,ex);x++)
+      if(world[y][x]!==blocks.air) drawBlock(x,y,world[y][x]);
+
+  // Enemies
+  for(const e of enemies) if(e.alive){
+    const x=e.x-camX,y=e.y-camY;
+    ctx.fillStyle="#42a83f"; ctx.fillRect(x,y,e.w,e.h);
+    ctx.fillStyle="#111"; ctx.fillRect(x+5,y+6,4,5); ctx.fillRect(x+15,y+6,4,5);
+    ctx.fillStyle="#245b22"; ctx.fillRect(x+8,y+17,9,4);
+  }
+
+  // Player
+  const px=player.x-camX, py=player.y-camY;
+  if(player.invuln===0 || Math.floor(player.invuln/6)%2===0){
+    ctx.fillStyle="#2d6cdf"; ctx.fillRect(px,py+10,player.w,player.h-10);
+    ctx.fillStyle="#f2c49b"; ctx.fillRect(px+3,py,player.w-6,14);
+    ctx.fillStyle="#4b2e1f"; ctx.fillRect(px+2,py,player.w-4,5);
+    ctx.fillStyle="#111"; ctx.fillRect(px+5,py+7,3,3); ctx.fillRect(px+15,py+7,3,3);
+  }
+
+  hud.innerHTML = `❤️ Leben: ${player.lives} &nbsp; ⭐ Punkte: ${player.score} &nbsp; 🧱 Blöcke: ${player.blocks}`;
+}
+
+function restart() {
+  player.x=6*TILE; player.y=(surface[6]-3)*TILE; player.vx=0; player.vy=0;
+  player.lives=3; player.score=0; player.blocks=12; player.invuln=0;
+  enemies.forEach((e,i)=>{
+    const x=18+Math.floor(Math.random()*110);
+    e.x=x*TILE; e.y=(surface[x]-2)*TILE; e.vx=0; e.vy=0; e.alive=true; e.dir=i%2?1:-1;
+  });
+}
+
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>
