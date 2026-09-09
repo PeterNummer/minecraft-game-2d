@@ -34,11 +34,21 @@
     #touch { display: flex; }
     #help { display: none; }
   }
+
+#hotbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;display:flex;gap:5px;padding:6px;background:rgba(0,0,0,.5);border-radius:10px}
+.slot{width:44px;height:44px;border:2px solid rgba(255,255,255,.5);border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px;background:rgba(30,30,30,.65)}
+.slot.selected{border-color:white;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+#message{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:7;color:white;background:rgba(0,0,0,.65);padding:12px 18px;border-radius:10px;font-weight:bold;opacity:0;transition:opacity .2s;pointer-events:none}
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 <div id="hud"></div>
+<div id="message"></div>
+<div id="hotbar">
+<div class="slot selected" data-slot="0">🧱</div><div class="slot" data-slot="1">🪨</div>
+<div class="slot" data-slot="2">🪵</div><div class="slot" data-slot="3">🟩</div><div class="slot" data-slot="4">🟨</div>
+</div>
 <div id="help">
   WASD / Pfeile = bewegen<br>
   Linksklick = Block abbauen<br>
@@ -135,6 +145,15 @@ const player = {
   lives: 3, score: 0, blocks: 12, invuln: 0
 };
 
+let selectedBlock = blocks.dirt, coins = 0, miningCooldown = 0, messageTimer = 0;
+const blockBySlot=[blocks.dirt,blocks.stone,blocks.wood,blocks.leaves,blocks.sand];
+const messageEl=document.getElementById("message");
+function showMessage(t){messageEl.textContent=t;messageEl.style.opacity="1";messageTimer=80;}
+document.querySelectorAll(".slot").forEach(s=>s.addEventListener("click",()=>{
+ const n=Number(s.dataset.slot); selectedBlock=blockBySlot[n];
+ document.querySelectorAll(".slot").forEach(x=>x.classList.remove("selected")); s.classList.add("selected");
+ showMessage("Block ausgewählt");
+}));
 let enemies = [];
 for (let i = 0; i < 10; i++) {
   const x = 18 + Math.floor(Math.random()*110);
@@ -149,6 +168,7 @@ addEventListener("keydown", e => {
   keys[e.key.toLowerCase()] = true;
   if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(e.key.toLowerCase())) e.preventDefault();
   if (e.key.toLowerCase() === "r") restart();
+if(/^[1-5]$/.test(e.key)){const n=Number(e.key)-1;selectedBlock=blockBySlot[n];document.querySelectorAll(".slot").forEach((s,i)=>s.classList.toggle("selected",i===n));}
 });
 addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
@@ -198,19 +218,17 @@ function nearPlayer(tx,ty) {
   const px=player.x+player.w/2, py=player.y+player.h/2;
   return Math.hypot(cx-px,cy-py) <= TILE*5;
 }
-function interact(place) {
+function interact(place) { if(miningCooldown>0)return;
   const {tx,ty}=worldMouse();
   if (tx<0||tx>=WORLD_W||ty<0||ty>=WORLD_H||!nearPlayer(tx,ty)) return;
   if (!place) {
     if (world[ty][tx] !== blocks.air) {
       world[ty][tx]=blocks.air;
-      player.score += 2;
-      player.blocks++;
+      player.score += 2; player.blocks++; if(Math.random()<.12){coins++;showMessage("🪙 Münze gefunden!");} miningCooldown=7;
     }
   } else if (world[ty][tx]===blocks.air && player.blocks>0) {
     if (!rectCollides(tx*TILE,ty*TILE,TILE,TILE)) {
-      world[ty][tx]=blocks.dirt;
-      player.blocks--;
+      world[ty][tx]=selectedBlock; player.blocks--; player.score++; miningCooldown=5;
     }
   }
 }
@@ -244,6 +262,8 @@ function hurt() {
 }
 
 function update() {
+  if(miningCooldown>0)miningCooldown--;
+  if(messageTimer>0){messageTimer--;if(messageTimer<15)messageEl.style.opacity=String(messageTimer/15);}
   let left = keys["a"] || keys["arrowleft"];
   let right = keys["d"] || keys["arrowright"];
   let jump = keys["w"] || keys["arrowup"] || keys[" "];
@@ -268,7 +288,8 @@ function update() {
     }
     moveEntity(e);
     if (player.x < e.x+e.w && player.x+player.w > e.x && player.y < e.y+e.h && player.y+player.h > e.y) {
-      hurt();
+      if(player.vy>0 && player.y+player.h-e.y<14){e.alive=false;player.vy=-7;player.score+=10;coins++;showMessage("👾 Gegner besiegt! +10 Punkte");}
+      else hurt();
     }
   }
 
@@ -331,12 +352,12 @@ function draw() {
     ctx.fillStyle="#111"; ctx.fillRect(px+5,py+7,3,3); ctx.fillRect(px+15,py+7,3,3);
   }
 
-  hud.innerHTML = `❤️ Leben: ${player.lives} &nbsp; ⭐ Punkte: ${player.score} &nbsp; 🧱 Blöcke: ${player.blocks}`;
+  hud.innerHTML = `❤️ Leben: ${player.lives} &nbsp; ⭐ Punkte: ${player.score} &nbsp; 🪙 Münzen: ${coins} &nbsp; 🧱 Blöcke: ${player.blocks}`;
 }
 
 function restart() {
   player.x=6*TILE; player.y=(surface[6]-3)*TILE; player.vx=0; player.vy=0;
-  player.lives=3; player.score=0; player.blocks=12; player.invuln=0;
+  player.lives=3; player.score=0; player.blocks=12; player.invuln=0; coins=0; selectedBlock=blocks.dirt; document.querySelectorAll(".slot").forEach((s,i)=>s.classList.toggle("selected",i===0));
   enemies.forEach((e,i)=>{
     const x=18+Math.floor(Math.random()*110);
     e.x=x*TILE; e.y=(surface[x]-2)*TILE; e.vx=0; e.vy=0; e.alive=true; e.dir=i%2?1:-1;
