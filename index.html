@@ -4,57 +4,222 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Minecraft Game 2D</title>
-<style>
-  * { box-sizing: border-box; }
-  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #87ceeb; font-family: Arial, sans-serif; }
-  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; touch-action: none; }
-  #hud {
-    position: fixed; left: 12px; top: 12px; z-index: 5;
-    background: rgba(0,0,0,.55); color: white; padding: 9px 12px;
-    border-radius: 8px; font-size: 15px; line-height: 1.45;
-    user-select: none;
-  }
-  #help {
-    position: fixed; right: 12px; top: 12px; z-index: 5;
-    background: rgba(0,0,0,.55); color: white; padding: 9px 12px;
-    border-radius: 8px; font-size: 13px; text-align: right;
-  }
-  #touch {
-    position: fixed; inset: auto 0 18px 0; z-index: 10;
-    display: none; justify-content: space-between; padding: 0 18px;
-    pointer-events: none;
-  }
-  .pad, .actions { display: flex; gap: 8px; pointer-events: auto; }
-  button {
-    border: 2px solid rgba(255,255,255,.75); border-radius: 12px;
-    background: rgba(0,0,0,.55); color: white; min-width: 54px; min-height: 54px;
-    font-size: 21px; font-weight: bold; touch-action: none;
-  }
-  @media (max-width: 800px), (pointer: coarse) {
-    #touch { display: flex; }
-    #help { display: none; }
-  }
 
-#hotbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;display:flex;gap:5px;padding:6px;background:rgba(0,0,0,.5);border-radius:10px}
-.slot{width:44px;height:44px;border:2px solid rgba(255,255,255,.5);border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px;background:rgba(30,30,30,.65)}
-.slot.selected{border-color:white;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
-#message{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:7;color:white;background:rgba(0,0,0,.65);padding:12px 18px;border-radius:10px;font-weight:bold;opacity:0;transition:opacity .2s;pointer-events:none}
+<style>
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#87ceeb;
+  font-family:Arial,sans-serif
+}
+
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+  image-rendering:pixelated;
+  touch-action:none
+}
+
+#hud{
+  position:fixed;
+  left:12px;
+  top:12px;
+  z-index:5;
+  background:rgba(0,0,0,.6);
+  color:white;
+  padding:9px 12px;
+  border-radius:8px;
+  font-size:15px;
+  line-height:1.45;
+  user-select:none
+}
+
+#help{
+  position:fixed;
+  right:12px;
+  top:12px;
+  z-index:5;
+  background:rgba(0,0,0,.6);
+  color:white;
+  padding:9px 12px;
+  border-radius:8px;
+  font-size:13px;
+  text-align:right
+}
+
+#hotbar{
+  position:fixed;
+  left:50%;
+  bottom:14px;
+  transform:translateX(-50%);
+  z-index:6;
+  display:flex;
+  gap:5px;
+  padding:6px;
+  background:rgba(0,0,0,.5);
+  border-radius:10px
+}
+
+.slot{
+  width:44px;
+  height:44px;
+  border:2px solid rgba(255,255,255,.5);
+  border-radius:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-size:20px;
+  background:rgba(30,30,30,.65)
+}
+
+.slot.selected{
+  border-color:white;
+  box-shadow:0 0 0 2px rgba(255,255,255,.35)
+}
+
+#message{
+  position:fixed;
+  left:50%;
+  top:18%;
+  transform:translateX(-50%);
+  z-index:7;
+  color:white;
+  background:rgba(0,0,0,.7);
+  padding:12px 18px;
+  border-radius:10px;
+  font-weight:bold;
+  opacity:0;
+  transition:opacity .2s;
+  pointer-events:none
+}
+
+#menu{
+  position:fixed;
+  inset:0;
+  z-index:20;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.72)
+}
+
+.menuBox{
+  width:min(420px,90%);
+  background:#222;
+  color:white;
+  border:3px solid #777;
+  border-radius:15px;
+  padding:25px;
+  text-align:center;
+  box-shadow:0 10px 40px rgba(0,0,0,.6)
+}
+
+.menuBox h1{
+  margin-top:0;
+  font-size:32px
+}
+
+.menuBox h2{
+  margin-bottom:10px
+}
+
+.menuButton{
+  width:100%;
+  margin:7px 0;
+  padding:13px;
+  border:2px solid #999;
+  border-radius:9px;
+  background:#444;
+  color:white;
+  font-size:17px;
+  cursor:pointer
+}
+
+.menuButton:hover{
+  background:#555
+}
+
+.menuButton:disabled{
+  opacity:.4;
+  cursor:not-allowed
+}
+
+.levelButton{
+  width:48%;
+  display:inline-block;
+  margin:1%;
+}
+
+#levelInfo{
+  margin:12px 0;
+  font-size:15px;
+  color:#ddd
+}
+
+#touch{
+  position:fixed;
+  inset:auto 0 18px 0;
+  z-index:10;
+  display:none;
+  justify-content:space-between;
+  padding:0 18px;
+  pointer-events:none
+}
+
+.pad,.actions{
+  display:flex;
+  gap:8px;
+  pointer-events:auto
+}
+
+button{
+  border:2px solid rgba(255,255,255,.75);
+  border-radius:12px;
+  background:rgba(0,0,0,.55);
+  color:white;
+  min-width:54px;
+  min-height:54px;
+  font-size:21px;
+  font-weight:bold;
+  touch-action:none
+}
+
+@media(max-width:800px),(pointer:coarse){
+  #touch{display:flex}
+  #help{display:none}
+}
 </style>
 </head>
+
 <body>
+
 <canvas id="game"></canvas>
+
 <div id="hud"></div>
 <div id="message"></div>
+
 <div id="hotbar">
-<div class="slot selected" data-slot="0">🧱</div><div class="slot" data-slot="1">🪨</div>
-<div class="slot" data-slot="2">🪵</div><div class="slot" data-slot="3">🟩</div><div class="slot" data-slot="4">🟨</div>
+  <div class="slot selected" data-slot="0">🧱</div>
+  <div class="slot" data-slot="1">🪨</div>
+  <div class="slot" data-slot="2">🪵</div>
+  <div class="slot" data-slot="3">🟩</div>
+  <div class="slot" data-slot="4">🟨</div>
 </div>
+
 <div id="help">
   WASD / Pfeile = bewegen<br>
   Linksklick = Block abbauen<br>
   Rechtsklick = Block setzen<br>
-  R = Neustart
+  R = Level neu starten<br>
+  ESC = Hauptmenü
 </div>
+
 <div id="touch">
   <div class="pad">
     <button data-key="ArrowLeft">◀</button>
@@ -62,310 +227,1808 @@
     <button data-key="ArrowUp">▲</button>
     <button data-key="ArrowDown">▼</button>
   </div>
+
   <div class="actions">
     <button id="breakBtn">⛏</button>
     <button id="placeBtn">🧱</button>
   </div>
 </div>
 
+<!-- HAUPTMENÜ -->
+<div id="menu">
+  <div class="menuBox">
+
+    <h1>⛏ Minecraft Game 2D</h1>
+
+    <div id="mainMenu">
+
+      <button class="menuButton" id="startButton">
+        ▶ Neues Spiel
+      </button>
+
+      <button class="menuButton" id="continueButton">
+        💾 Spiel fortsetzen
+      </button>
+
+      <button class="menuButton" id="levelsButton">
+        🎯 Level auswählen
+      </button>
+
+      <button class="menuButton" id="settingsButton">
+        ⚙ Einstellungen
+      </button>
+
+    </div>
+
+    <div id="levelsMenu" style="display:none">
+      <h2>🎯 Level auswählen</h2>
+
+      <div id="levelInfo"></div>
+
+      <button class="menuButton levelButton" data-level="1">
+        Level 1
+      </button>
+
+      <button class="menuButton levelButton" data-level="2">
+        Level 2
+      </button>
+
+      <button class="menuButton levelButton" data-level="3">
+        Level 3
+      </button>
+
+      <button class="menuButton levelButton" data-level="4">
+        Level 4
+      </button>
+
+      <button class="menuButton levelButton" data-level="5">
+        Level 5
+      </button>
+
+      <button class="menuButton" id="backFromLevels">
+        ⬅ Zurück
+      </button>
+    </div>
+
+    <div id="settingsMenu" style="display:none">
+
+      <h2>⚙ Einstellungen</h2>
+
+      <p>Schwierigkeit:</p>
+
+      <button class="menuButton" data-difficulty="easy">
+        🟢 Einfach
+      </button>
+
+      <button class="menuButton" data-difficulty="normal">
+        🟡 Normal
+      </button>
+
+      <button class="menuButton" data-difficulty="hard">
+        🔴 Schwer
+      </button>
+
+      <hr>
+
+      <button class="menuButton" id="saveButton">
+        💾 Jetzt speichern
+      </button>
+
+      <button class="menuButton" id="deleteSaveButton">
+        🗑 Spielstand löschen
+      </button>
+
+      <button class="menuButton" id="backFromSettings">
+        ⬅ Zurück
+      </button>
+
+    </div>
+
+  </div>
+</div>
+
 <script>
 "use strict";
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
-const hud = document.getElementById("hud");
+/* =========================
+   CANVAS
+========================= */
 
-let W = 0, H = 0;
-function resize() {
-  W = canvas.width = Math.max(640, innerWidth);
-  H = canvas.height = Math.max(360, innerHeight);
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+ctx.imageSmoothingEnabled=false;
+
+const hud=document.getElementById("hud");
+const menu=document.getElementById("menu");
+const messageEl=document.getElementById("message");
+
+let W=0,H=0;
+
+function resize(){
+  W=canvas.width=Math.max(640,innerWidth);
+  H=canvas.height=Math.max(360,innerHeight);
 }
-addEventListener("resize", resize);
+
+addEventListener("resize",resize);
 resize();
 
-const TILE = 32;
-const WORLD_W = 180;
-const WORLD_H = 45;
-const GRAVITY = 0.48;
-const SPEED = 3.3;
-const JUMP = 9.8;
 
-const blocks = {
-  air: 0, grass: 1, dirt: 2, stone: 3, wood: 4, leaves: 5, sand: 6
+/* =========================
+   SPIELWERTE
+========================= */
+
+const TILE=32;
+const WORLD_W=180;
+const WORLD_H=45;
+
+const GRAVITY=.48;
+const SPEED=3.3;
+const JUMP=9.8;
+
+const SAVE_KEY="minecraftGame2D_save_v2";
+
+const blocks={
+  air:0,
+  grass:1,
+  dirt:2,
+  stone:3,
+  wood:4,
+  leaves:5,
+  sand:6
 };
-const colors = {
-  grass: "#55a630", dirt: "#8b5a2b", stone: "#777",
-  wood: "#8d5a2f", leaves: "#2e8b57", sand: "#d9bd70"
+
+const colors={
+  grass:"#55a630",
+  dirt:"#8b5a2b",
+  stone:"#777",
+  wood:"#8d5a2f",
+  leaves:"#2e8b57",
+  sand:"#d9bd70"
 };
 
-const world = Array.from({length: WORLD_H}, () => Array(WORLD_W).fill(blocks.air));
-const surface = Array(WORLD_W).fill(0);
+let level=1;
+let difficulty="normal";
+let gameRunning=false;
 
-function generateWorld() {
-  let y = 24;
-  for (let x = 0; x < WORLD_W; x++) {
-    y += Math.floor(Math.random() * 3) - 1;
-    y = Math.max(18, Math.min(29, y));
-    surface[x] = y;
-    for (let yy = y; yy < WORLD_H; yy++) {
-      if (yy === y) world[yy][x] = blocks.grass;
-      else if (yy < y + 4) world[yy][x] = blocks.dirt;
-      else world[yy][x] = blocks.stone;
+let miningCooldown=0;
+let messageTimer=0;
+
+let selectedBlock=blocks.dirt;
+
+const blockBySlot=[
+  blocks.dirt,
+  blocks.stone,
+  blocks.wood,
+  blocks.leaves,
+  blocks.sand
+];
+
+const world=Array.from(
+  {length:WORLD_H},
+  ()=>Array(WORLD_W).fill(blocks.air)
+);
+
+const surface=Array(WORLD_W).fill(0);
+
+let enemies=[];
+
+
+/* =========================
+   LEVEL-EINSTELLUNGEN
+========================= */
+
+function getEnemyCount(){
+
+  if(difficulty==="easy"){
+    return 3+level;
+  }
+
+  if(difficulty==="hard"){
+    return 7+level*2;
+  }
+
+  return 5+level;
+}
+
+function getEnemySpeed(){
+
+  if(difficulty==="easy"){
+    return .7+level*.08;
+  }
+
+  if(difficulty==="hard"){
+    return 1.3+level*.13;
+  }
+
+  return 1.05+level*.1;
+}
+
+
+/* =========================
+   ZIELPUNKT
+========================= */
+
+let goal={
+  x:0,
+  y:0,
+  w:24,
+  h:50
+};
+
+function createGoal(){
+
+  const x=WORLD_W-8;
+
+  goal.x=x*TILE+4;
+  goal.y=(surface[x]-2)*TILE;
+}
+
+
+/* =========================
+   WELT GENERIEREN
+========================= */
+
+function generateWorld(){
+
+  for(let y=0;y<WORLD_H;y++){
+    for(let x=0;x<WORLD_W;x++){
+      world[y][x]=blocks.air;
     }
   }
-  // Sand patches
-  for (let i = 0; i < 8; i++) {
-    const x = 8 + Math.floor(Math.random() * (WORLD_W - 16));
-    for (let dx = -2; dx <= 2; dx++) {
-      const xx = x + dx;
-      if (xx > 0 && xx < WORLD_W) {
-        const sy = surface[xx];
-        world[sy][xx] = blocks.sand;
-        for (let yy = sy + 1; yy < sy + 3 && yy < WORLD_H; yy++) world[yy][xx] = blocks.sand;
+
+  let y=24;
+
+  for(let x=0;x<WORLD_W;x++){
+
+    y+=Math.floor(Math.random()*3)-1;
+
+    y=Math.max(18,Math.min(29,y));
+
+    surface[x]=y;
+
+    for(let yy=y;yy<WORLD_H;yy++){
+
+      if(yy===y){
+        world[yy][x]=blocks.grass;
+      }
+
+      else if(yy<y+4){
+        world[yy][x]=blocks.dirt;
+      }
+
+      else{
+        world[yy][x]=blocks.stone;
       }
     }
   }
-  // Trees
-  for (let x = 6; x < WORLD_W - 6; x += 7 + Math.floor(Math.random()*7)) {
-    if (Math.random() < .65) {
-      const sy = surface[x];
-      for (let i = 1; i <= 4; i++) if (sy-i >= 0) world[sy-i][x] = blocks.wood;
-      for (let dx = -2; dx <= 2; dx++)
-        for (let dy = 1; dy <= 3; dy++)
-          if (Math.abs(dx) + dy < 5 && sy-4-dy >= 0) world[sy-4-dy][x+dx] = blocks.leaves;
+
+
+  /* Sand */
+
+  for(let i=0;i<8;i++){
+
+    const x=8+
+      Math.floor(Math.random()*(WORLD_W-16));
+
+    for(let dx=-2;dx<=2;dx++){
+
+      const xx=x+dx;
+
+      if(xx>0 && xx<WORLD_W){
+
+        const sy=surface[xx];
+
+        world[sy][xx]=blocks.sand;
+
+        for(
+          let yy=sy+1;
+          yy<sy+3 && yy<WORLD_H;
+          yy++
+        ){
+          world[yy][xx]=blocks.sand;
+        }
+      }
+    }
+  }
+
+
+  /* Bäume */
+
+  for(
+    let x=6;
+    x<WORLD_W-6;
+    x+=7+Math.floor(Math.random()*7)
+  ){
+
+    if(Math.random()<.65){
+
+      const sy=surface[x];
+
+      for(let i=1;i<=4;i++){
+
+        if(sy-i>=0){
+          world[sy-i][x]=blocks.wood;
+        }
+      }
+
+      for(let dx=-2;dx<=2;dx++){
+
+        for(let dy=1;dy<=3;dy++){
+
+          if(
+            Math.abs(dx)+dy<5 &&
+            sy-4-dy>=0 &&
+            x+dx>=0 &&
+            x+dx<WORLD_W
+          ){
+
+            world[sy-4-dy][x+dx]=blocks.leaves;
+          }
+        }
+      }
     }
   }
 }
-generateWorld();
 
-const player = {
-  x: 6*TILE, y: (surface[6]-2)*TILE,
-  w: 22, h: 30, vx: 0, vy: 0, onGround: false,
-  lives: 3, score: 0, blocks: 12, invuln: 0
+
+/* =========================
+   SPIELER
+========================= */
+
+const player={
+  x:6*TILE,
+  y:0,
+  w:22,
+  h:30,
+  vx:0,
+  vy:0,
+  onGround:false,
+
+  lives:3,
+  score:0,
+  blocks:12,
+
+  invuln:0
 };
 
-let selectedBlock = blocks.dirt, coins = 0, miningCooldown = 0, messageTimer = 0;
-const blockBySlot=[blocks.dirt,blocks.stone,blocks.wood,blocks.leaves,blocks.sand];
-const messageEl=document.getElementById("message");
-function showMessage(t){messageEl.textContent=t;messageEl.style.opacity="1";messageTimer=80;}
-document.querySelectorAll(".slot").forEach(s=>s.addEventListener("click",()=>{
- const n=Number(s.dataset.slot); selectedBlock=blockBySlot[n];
- document.querySelectorAll(".slot").forEach(x=>x.classList.remove("selected")); s.classList.add("selected");
- showMessage("Block ausgewählt");
-}));
-let enemies = [];
-for (let i = 0; i < 10; i++) {
-  const x = 18 + Math.floor(Math.random()*110);
-  enemies.push({
-    x: x*TILE, y: (surface[x]-2)*TILE, w: 24, h: 24,
-    vx: 0, vy: 0, alive: true, dir: Math.random()<.5?-1:1
-  });
+
+/* =========================
+   GEGNER
+========================= */
+
+function createEnemies(){
+
+  enemies=[];
+
+  const count=getEnemyCount();
+
+  for(let i=0;i<count;i++){
+
+    const x=
+      18+
+      Math.floor(
+        Math.random()*(WORLD_W-35)
+      );
+
+    enemies.push({
+
+      x:x*TILE,
+      y:(surface[x]-2)*TILE,
+
+      w:24,
+      h:24,
+
+      vx:0,
+      vy:0,
+
+      onGround:false,
+
+      alive:true,
+
+      dir:Math.random()<.5?-1:1
+    });
+  }
 }
 
-const keys = {};
-addEventListener("keydown", e => {
-  keys[e.key.toLowerCase()] = true;
-  if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(e.key.toLowerCase())) e.preventDefault();
-  if (e.key.toLowerCase() === "r") restart();
-if(/^[1-5]$/.test(e.key)){const n=Number(e.key)-1;selectedBlock=blockBySlot[n];document.querySelectorAll(".slot").forEach((s,i)=>s.classList.toggle("selected",i===n));}
+
+/* =========================
+   LEVEL STARTEN
+========================= */
+
+function startLevel(newLevel){
+
+  level=Math.max(1,Math.min(5,newLevel));
+
+  generateWorld();
+
+  createGoal();
+
+  player.x=6*TILE;
+  player.y=(surface[6]-3)*TILE;
+
+  player.vx=0;
+  player.vy=0;
+
+  player.lives=3;
+  player.blocks=12;
+  player.invuln=0;
+
+  selectedBlock=blocks.dirt;
+
+  document.querySelectorAll(".slot")
+    .forEach((s,i)=>
+      s.classList.toggle("selected",i===0)
+    );
+
+  createEnemies();
+
+  gameRunning=true;
+
+  menu.style.display="none";
+
+  showMessage(
+    "🎯 Level "+level+" – Erreiche den Zielpunkt!"
+  );
+
+  saveGame();
+}
+
+
+/* =========================
+   SPEICHERN
+========================= */
+
+function saveGame(){
+
+  if(!gameRunning)return;
+
+  const data={
+    level:level,
+    difficulty:difficulty,
+    score:player.score,
+    blocks:player.blocks,
+    lives:player.lives,
+    savedAt:new Date().toLocaleString("de-DE")
+  };
+
+  localStorage.setItem(
+    SAVE_KEY,
+    JSON.stringify(data)
+  );
+}
+
+
+function hasSave(){
+
+  return !!localStorage.getItem(SAVE_KEY);
+}
+
+
+function loadGame(){
+
+  const raw=localStorage.getItem(SAVE_KEY);
+
+  if(!raw)return;
+
+  try{
+
+    const data=JSON.parse(raw);
+
+    level=data.level||1;
+    difficulty=data.difficulty||"normal";
+
+    player.score=data.score||0;
+
+    startLevel(level);
+
+    player.score=data.score||0;
+    player.blocks=data.blocks||12;
+    player.lives=data.lives||3;
+
+  }catch(e){
+
+    localStorage.removeItem(SAVE_KEY);
+
+    alert("Der Spielstand konnte nicht geladen werden.");
+  }
+}
+
+
+function deleteSave(){
+
+  localStorage.removeItem(SAVE_KEY);
+
+  updateContinueButton();
+
+  alert("Der Spielstand wurde gelöscht.");
+}
+
+
+function updateContinueButton(){
+
+  const button=
+    document.getElementById("continueButton");
+
+  button.disabled=!hasSave();
+}
+
+
+/* =========================
+   MENÜ
+========================= */
+
+function showMainMenu(){
+
+  gameRunning=false;
+
+  menu.style.display="flex";
+
+  document.getElementById("mainMenu")
+    .style.display="block";
+
+  document.getElementById("levelsMenu")
+    .style.display="none";
+
+  document.getElementById("settingsMenu")
+    .style.display="none";
+
+  updateContinueButton();
+}
+
+
+function showLevelsMenu(){
+
+  document.getElementById("mainMenu")
+    .style.display="none";
+
+  document.getElementById("levelsMenu")
+    .style.display="block";
+
+  document.getElementById("settingsMenu")
+    .style.display="none";
+
+  document.getElementById("levelInfo").innerHTML=
+    "Aktuelles Level: <b>"+level+
+    "</b><br>Schwierigkeit: <b>"+
+    getDifficultyName()+
+    "</b>";
+}
+
+
+function showSettingsMenu(){
+
+  document.getElementById("mainMenu")
+    .style.display="none";
+
+  document.getElementById("levelsMenu")
+    .style.display="none";
+
+  document.getElementById("settingsMenu")
+    .style.display="block";
+}
+
+
+function getDifficultyName(){
+
+  if(difficulty==="easy")return "Einfach";
+  if(difficulty==="hard")return "Schwer";
+
+  return "Normal";
+}
+
+
+/* =========================
+   MENÜ BUTTONS
+========================= */
+
+document.getElementById("startButton")
+.addEventListener("click",()=>{
+
+  player.score=0;
+
+  startLevel(1);
 });
-addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-function solidAt(tx, ty) {
-  if (tx < 0 || tx >= WORLD_W || ty >= WORLD_H) return true;
-  if (ty < 0) return false;
-  return world[ty][tx] !== blocks.air;
+
+document.getElementById("continueButton")
+.addEventListener("click",()=>{
+
+  loadGame();
+});
+
+
+document.getElementById("levelsButton")
+.addEventListener("click",()=>{
+  showLevelsMenu();
+});
+
+
+document.getElementById("settingsButton")
+.addEventListener("click",()=>{
+  showSettingsMenu();
+});
+
+
+document.getElementById("backFromLevels")
+.addEventListener("click",()=>{
+  showMainMenu();
+});
+
+
+document.getElementById("backFromSettings")
+.addEventListener("click",()=>{
+  showMainMenu();
+});
+
+
+document.querySelectorAll("[data-level]")
+.forEach(button=>{
+
+  button.addEventListener("click",()=>{
+
+    const chosenLevel=
+      Number(button.dataset.level);
+
+    startLevel(chosenLevel);
+  });
+});
+
+
+document.querySelectorAll("[data-difficulty]")
+.forEach(button=>{
+
+  button.addEventListener("click",()=>{
+
+    difficulty=button.dataset.difficulty;
+
+    showMessage(
+      "Schwierigkeit: "+getDifficultyName()
+    );
+  });
+});
+
+
+document.getElementById("saveButton")
+.addEventListener("click",()=>{
+
+  if(gameRunning){
+
+    saveGame();
+
+    alert("💾 Spielstand gespeichert!");
+  }
+
+  else{
+
+    alert("Starte zuerst ein Spiel.");
+  }
+});
+
+
+document.getElementById("deleteSaveButton")
+.addEventListener("click",()=>{
+
+  if(confirm("Spielstand wirklich löschen?")){
+    deleteSave();
+  }
+});
+
+
+/* =========================
+   TASTATUR
+========================= */
+
+const keys={};
+
+addEventListener("keydown",e=>{
+
+  keys[e.key.toLowerCase()]=true;
+
+  if(
+    [
+      "arrowup",
+      "arrowdown",
+      "arrowleft",
+      "arrowright",
+      " "
+    ].includes(e.key.toLowerCase())
+  ){
+    e.preventDefault();
+  }
+
+
+  if(e.key.toLowerCase()==="r" && gameRunning){
+
+    startLevel(level);
+  }
+
+
+  if(e.key==="Escape" && gameRunning){
+
+    saveGame();
+    showMainMenu();
+  }
+
+
+  if(/^[1-5]$/.test(e.key)){
+
+    const n=Number(e.key)-1;
+
+    selectedBlock=blockBySlot[n];
+
+    document.querySelectorAll(".slot")
+      .forEach((s,i)=>
+        s.classList.toggle(
+          "selected",
+          i===n
+        )
+      );
+  }
+});
+
+
+addEventListener("keyup",e=>{
+  keys[e.key.toLowerCase()]=false;
+});
+
+
+/* =========================
+   BLOCK AUSWAHL
+========================= */
+
+document.querySelectorAll(".slot")
+.forEach(s=>{
+
+  s.addEventListener("click",()=>{
+
+    const n=Number(s.dataset.slot);
+
+    selectedBlock=blockBySlot[n];
+
+    document.querySelectorAll(".slot")
+      .forEach(x=>
+        x.classList.remove("selected")
+      );
+
+    s.classList.add("selected");
+
+    showMessage("Block ausgewählt");
+  });
+});
+
+
+/* =========================
+   KOLLISION
+========================= */
+
+function solidAt(tx,ty){
+
+  if(tx<0 || tx>=WORLD_W || ty>=WORLD_H){
+    return true;
+  }
+
+  if(ty<0)return false;
+
+  return world[ty][tx]!==blocks.air;
 }
-function rectCollides(x,y,w,h) {
-  const l = Math.floor(x/TILE), r = Math.floor((x+w-1)/TILE);
-  const t = Math.floor(y/TILE), b = Math.floor((y+h-1)/TILE);
-  for (let ty=t; ty<=b; ty++) for (let tx=l; tx<=r; tx++) if (solidAt(tx,ty)) return true;
+
+
+function rectCollides(x,y,w,h){
+
+  const l=Math.floor(x/TILE);
+  const r=Math.floor((x+w-1)/TILE);
+
+  const t=Math.floor(y/TILE);
+  const b=Math.floor((y+h-1)/TILE);
+
+  for(let ty=t;ty<=b;ty++){
+
+    for(let tx=l;tx<=r;tx++){
+
+      if(solidAt(tx,ty)){
+        return true;
+      }
+    }
+  }
+
   return false;
 }
-function moveEntity(o) {
-  o.x += o.vx;
-  if (rectCollides(o.x,o.y,o.w,o.h)) {
-    if (o.vx > 0) o.x = Math.floor((o.x+o.w-1)/TILE)*TILE-o.w;
-    else if (o.vx < 0) o.x = (Math.floor(o.x/TILE)+1)*TILE;
-    o.vx = 0;
+
+
+function moveEntity(o){
+
+  o.x+=o.vx;
+
+  if(rectCollides(
+    o.x,o.y,o.w,o.h
+  )){
+
+    if(o.vx>0){
+
+      o.x=
+        Math.floor(
+          (o.x+o.w-1)/TILE
+        )*TILE-o.w;
+    }
+
+    else if(o.vx<0){
+
+      o.x=
+        (Math.floor(o.x/TILE)+1)*TILE;
+    }
+
+    o.vx=0;
   }
-  o.y += o.vy;
-  o.onGround = false;
-  if (rectCollides(o.x,o.y,o.w,o.h)) {
-    if (o.vy > 0) {
-      o.y = Math.floor((o.y+o.h-1)/TILE)*TILE-o.h;
-      o.onGround = true;
-    } else if (o.vy < 0) o.y = (Math.floor(o.y/TILE)+1)*TILE;
-    o.vy = 0;
+
+
+  o.y+=o.vy;
+
+  o.onGround=false;
+
+  if(rectCollides(
+    o.x,o.y,o.w,o.h
+  )){
+
+    if(o.vy>0){
+
+      o.y=
+        Math.floor(
+          (o.y+o.h-1)/TILE
+        )*TILE-o.h;
+
+      o.onGround=true;
+    }
+
+    else if(o.vy<0){
+
+      o.y=
+        (Math.floor(o.y/TILE)+1)*TILE;
+    }
+
+    o.vy=0;
   }
 }
 
-let camX = 0, camY = 0;
-let mouse = {x:0,y:0};
-canvas.addEventListener("mousemove", e => { mouse.x=e.clientX; mouse.y=e.clientY; });
-canvas.addEventListener("contextmenu", e => e.preventDefault());
-canvas.addEventListener("mousedown", e => {
-  if (e.button === 0) interact(false);
-  if (e.button === 2) interact(true);
-});
 
-function worldMouse() {
-  return { tx: Math.floor((mouse.x+camX)/TILE), ty: Math.floor((mouse.y+camY)/TILE) };
+/* =========================
+   MAUS
+========================= */
+
+let camX=0;
+let camY=0;
+
+let mouse={
+  x:0,
+  y:0
+};
+
+canvas.addEventListener(
+  "mousemove",
+  e=>{
+    mouse.x=e.clientX;
+    mouse.y=e.clientY;
+  }
+);
+
+canvas.addEventListener(
+  "contextmenu",
+  e=>e.preventDefault()
+);
+
+canvas.addEventListener(
+  "mousedown",
+  e=>{
+
+    if(!gameRunning)return;
+
+    if(e.button===0){
+      interact(false);
+    }
+
+    if(e.button===2){
+      interact(true);
+    }
+  }
+);
+
+
+/* =========================
+   BLOCK INTERAKTION
+========================= */
+
+function worldMouse(){
+
+  return{
+    tx:Math.floor(
+      (mouse.x+camX)/TILE
+    ),
+
+    ty:Math.floor(
+      (mouse.y+camY)/TILE
+    )
+  };
 }
-function nearPlayer(tx,ty) {
-  const cx=tx*TILE+TILE/2, cy=ty*TILE+TILE/2;
-  const px=player.x+player.w/2, py=player.y+player.h/2;
-  return Math.hypot(cx-px,cy-py) <= TILE*5;
+
+
+function nearPlayer(tx,ty){
+
+  const cx=
+    tx*TILE+TILE/2;
+
+  const cy=
+    ty*TILE+TILE/2;
+
+  const px=
+    player.x+player.w/2;
+
+  const py=
+    player.y+player.h/2;
+
+  return Math.hypot(
+    cx-px,
+    cy-py
+  )<=TILE*5;
 }
-function interact(place) { if(miningCooldown>0)return;
+
+
+function interact(place){
+
+  if(miningCooldown>0)return;
+
   const {tx,ty}=worldMouse();
-  if (tx<0||tx>=WORLD_W||ty<0||ty>=WORLD_H||!nearPlayer(tx,ty)) return;
-  if (!place) {
-    if (world[ty][tx] !== blocks.air) {
+
+  if(
+    tx<0 ||
+    tx>=WORLD_W ||
+    ty<0 ||
+    ty>=WORLD_H ||
+    !nearPlayer(tx,ty)
+  ){
+    return;
+  }
+
+
+  if(!place){
+
+    if(world[ty][tx]!==blocks.air){
+
       world[ty][tx]=blocks.air;
-      player.score += 2; player.blocks++; if(Math.random()<.12){coins++;showMessage("🪙 Münze gefunden!");} miningCooldown=7;
+
+      player.score+=2;
+      player.blocks++;
+
+      miningCooldown=7;
     }
-  } else if (world[ty][tx]===blocks.air && player.blocks>0) {
-    if (!rectCollides(tx*TILE,ty*TILE,TILE,TILE)) {
-      world[ty][tx]=selectedBlock; player.blocks--; player.score++; miningCooldown=5;
+  }
+
+
+  else if(
+    world[ty][tx]===blocks.air &&
+    player.blocks>0
+  ){
+
+    if(
+      !rectCollides(
+        tx*TILE,
+        ty*TILE,
+        TILE,
+        TILE
+      )
+    ){
+
+      world[ty][tx]=selectedBlock;
+
+      player.blocks--;
+
+      player.score++;
+
+      miningCooldown=5;
     }
   }
 }
 
-function touchKey(key, down) { keys[key.toLowerCase()] = down; }
-document.querySelectorAll("[data-key]").forEach(b => {
+
+/* =========================
+   TOUCH
+========================= */
+
+function touchKey(key,down){
+
+  keys[key.toLowerCase()]=down;
+}
+
+
+document.querySelectorAll("[data-key]")
+.forEach(b=>{
+
   const k=b.dataset.key;
-  b.addEventListener("pointerdown", e => { e.preventDefault(); touchKey(k,true); });
-  b.addEventListener("pointerup", e => { e.preventDefault(); touchKey(k,false); });
-  b.addEventListener("pointerleave", e => touchKey(k,false));
+
+  b.addEventListener(
+    "pointerdown",
+    e=>{
+      e.preventDefault();
+      touchKey(k,true);
+    }
+  );
+
+  b.addEventListener(
+    "pointerup",
+    e=>{
+      e.preventDefault();
+      touchKey(k,false);
+    }
+  );
+
+  b.addEventListener(
+    "pointerleave",
+    ()=>{
+      touchKey(k,false);
+    }
+  );
 });
-document.getElementById("breakBtn").addEventListener("pointerdown", e => {
+
+
+document.getElementById("breakBtn")
+.addEventListener("pointerdown",e=>{
+
   e.preventDefault();
-  mouse.x = player.x + player.w/2 - camX + (player.vx>=0?TILE*1.2:-TILE*1.2);
-  mouse.y = player.y + player.h/2 - camY;
+
+  mouse.x=
+    player.x+
+    player.w/2-
+    camX+
+    (
+      player.vx>=0
+      ?TILE*1.2
+      :-TILE*1.2
+    );
+
+  mouse.y=
+    player.y+
+    player.h/2-
+    camY;
+
   interact(false);
 });
-document.getElementById("placeBtn").addEventListener("pointerdown", e => {
+
+
+document.getElementById("placeBtn")
+.addEventListener("pointerdown",e=>{
+
   e.preventDefault();
-  mouse.x = player.x + player.w/2 - camX + (player.vx>=0?TILE*1.2:-TILE*1.2);
-  mouse.y = player.y + player.h/2 - camY;
+
+  mouse.x=
+    player.x+
+    player.w/2-
+    camX+
+    (
+      player.vx>=0
+      ?TILE*1.2
+      :-TILE*1.2
+    );
+
+  mouse.y=
+    player.y+
+    player.h/2-
+    camY;
+
   interact(true);
 });
 
-function hurt() {
-  if (player.invuln > 0) return;
+
+/* =========================
+   SCHADEN
+========================= */
+
+function hurt(){
+
+  if(player.invuln>0)return;
+
   player.lives--;
-  player.invuln = 90;
-  player.vy = -6;
-  if (player.lives <= 0) restart();
+
+  player.invuln=90;
+
+  player.vy=-6;
+
+  if(player.lives<=0){
+
+    showMessage(
+      "💀 Keine Leben mehr!"
+    );
+
+    setTimeout(()=>{
+      startLevel(level);
+    },700);
+  }
 }
 
-function update() {
-  if(miningCooldown>0)miningCooldown--;
-  if(messageTimer>0){messageTimer--;if(messageTimer<15)messageEl.style.opacity=String(messageTimer/15);}
-  let left = keys["a"] || keys["arrowleft"];
-  let right = keys["d"] || keys["arrowright"];
-  let jump = keys["w"] || keys["arrowup"] || keys[" "];
 
-  player.vx = left && !right ? -SPEED : right && !left ? SPEED : 0;
-  if (jump && player.onGround) player.vy = -JUMP;
-  player.vy += GRAVITY;
-  if (player.invuln > 0) player.invuln--;
+/* =========================
+   ZIEL PRÜFEN
+========================= */
+
+function checkGoal(){
+
+  const hit=
+    player.x<goal.x+goal.w &&
+    player.x+player.w>goal.x &&
+    player.y<goal.y+goal.h &&
+    player.y+player.h>goal.y;
+
+  if(!hit)return;
+
+  completeLevel();
+}
+
+
+/* =========================
+   LEVEL GESCHAFFT
+========================= */
+
+function completeLevel(){
+
+  gameRunning=false;
+
+  /* Fortschritt speichern */
+
+  if(level<5){
+
+    level++;
+
+    saveGame();
+
+    alert(
+      "🎯 Level geschafft!\n\n"+
+      "Du kommst jetzt zurück ins Hauptmenü."
+    );
+
+    showMainMenu();
+
+  }
+
+  else{
+
+    localStorage.removeItem(SAVE_KEY);
+
+    alert(
+      "🏆 Herzlichen Glückwunsch!\n\n"+
+      "Du hast alle 5 Level geschafft!"
+    );
+
+    level=1;
+
+    showMainMenu();
+  }
+}
+
+
+/* =========================
+   UPDATE
+========================= */
+
+function update(){
+
+  if(!gameRunning)return;
+
+
+  if(miningCooldown>0){
+    miningCooldown--;
+  }
+
+
+  if(messageTimer>0){
+
+    messageTimer--;
+
+    if(messageTimer<15){
+
+      messageEl.style.opacity=
+        String(messageTimer/15);
+    }
+  }
+
+
+  let left=
+    keys["a"] ||
+    keys["arrowleft"];
+
+  let right=
+    keys["d"] ||
+    keys["arrowright"];
+
+  let jump=
+    keys["w"] ||
+    keys["arrowup"] ||
+    keys[" "];
+
+
+  player.vx=
+    left && !right
+    ?-SPEED
+    :right && !left
+    ?SPEED
+    :0;
+
+
+  if(jump && player.onGround){
+
+    player.vy=-JUMP;
+  }
+
+
+  player.vy+=GRAVITY;
+
+
+  if(player.invuln>0){
+    player.invuln--;
+  }
+
+
   moveEntity(player);
 
-  for (const e of enemies) {
-    if (!e.alive) continue;
-    const dx = player.x-e.x;
-    e.dir = dx<0?-1:1;
-    e.vx = e.dir*1.05;
-    e.vy += GRAVITY;
-    // Simple turn-around at walls/cliffs
-    if (e.onGround) {
-      const aheadX = Math.floor((e.x + (e.dir>0?e.w+3:-3))/TILE);
-      const footY = Math.floor((e.y+e.h+3)/TILE);
-      if (solidAt(aheadX, Math.floor(e.y/TILE)) || !solidAt(aheadX,footY)) e.dir *= -1;
+
+  /* Gegner */
+
+  for(const e of enemies){
+
+    if(!e.alive)continue;
+
+    const dx=
+      player.x-e.x;
+
+    e.dir=
+      dx<0
+      ?-1
+      :1;
+
+    e.vx=
+      e.dir*getEnemySpeed();
+
+    e.vy+=GRAVITY;
+
+
+    if(e.onGround){
+
+      const aheadX=
+        Math.floor(
+          (
+            e.x+
+            (e.dir>0
+              ?e.w+3
+              :-3)
+          )/TILE
+        );
+
+      const footY=
+        Math.floor(
+          (e.y+e.h+3)/TILE
+        );
+
+
+      if(
+        solidAt(
+          aheadX,
+          Math.floor(e.y/TILE)
+        ) ||
+        !solidAt(aheadX,footY)
+      ){
+
+        e.dir*=-1;
+      }
     }
+
+
     moveEntity(e);
-    if (player.x < e.x+e.w && player.x+player.w > e.x && player.y < e.y+e.h && player.y+player.h > e.y) {
-      if(player.vy>0 && player.y+player.h-e.y<14){e.alive=false;player.vy=-7;player.score+=10;coins++;showMessage("👾 Gegner besiegt! +10 Punkte");}
-      else hurt();
+
+
+    /* Spieler trifft Gegner */
+
+    if(
+      player.x<e.x+e.w &&
+      player.x+player.w>e.x &&
+      player.y<e.y+e.h &&
+      player.y+player.h>e.y
+    ){
+
+      if(
+        player.vy>0 &&
+        player.y+player.h-e.y<14
+      ){
+
+        e.alive=false;
+
+        player.vy=-7;
+
+        player.score+=10;
+
+        showMessage(
+          "👾 Gegner besiegt! +10 Punkte"
+        );
+      }
+
+      else{
+
+        hurt();
+      }
     }
   }
 
-  if (player.y > WORLD_H*TILE) {
-    player.x=6*TILE; player.y=(surface[6]-3)*TILE; player.vy=0; hurt();
+
+  /* Runtergefallen */
+
+  if(player.y>WORLD_H*TILE){
+
+    player.x=6*TILE;
+
+    player.y=(surface[6]-3)*TILE;
+
+    player.vy=0;
+
+    hurt();
   }
 
-  camX = Math.max(0, Math.min(WORLD_W*TILE-W, player.x-W*.45));
-  camY = Math.max(0, Math.min(WORLD_H*TILE-H, player.y-H*.45));
+
+  /* Ziel */
+
+  checkGoal();
+
+
+  /* Kamera */
+
+  camX=Math.max(
+    0,
+    Math.min(
+      WORLD_W*TILE-W,
+      player.x-W*.45
+    )
+  );
+
+  camY=Math.max(
+    0,
+    Math.min(
+      WORLD_H*TILE-H,
+      player.y-H*.45
+    )
+  );
+
+
+  /* HUD */
+
+  hud.innerHTML=
+    "🎯 Level: "+level+
+    " &nbsp; ❤️ Leben: "+player.lives+
+    " &nbsp; ⭐ Punkte: "+player.score+
+    " &nbsp; 🧱 Blöcke: "+player.blocks+
+    " &nbsp; ⚙️ "+getDifficultyName();
 }
 
-function drawBlock(x,y,type) {
-  const px=x*TILE-camX, py=y*TILE-camY;
-  if (px<-TILE||py<-TILE||px>W||py>H) return;
-  let c = type===blocks.grass?colors.grass:type===blocks.dirt?colors.dirt:
-          type===blocks.stone?colors.stone:type===blocks.wood?colors.wood:
-          type===blocks.leaves?colors.leaves:colors.sand;
-  ctx.fillStyle=c; ctx.fillRect(px,py,TILE,TILE);
-  if(type===blocks.grass){ctx.fillStyle="#3d8f32";ctx.fillRect(px,py,TILE,6);}
+
+/* =========================
+   BLOCK ZEICHNEN
+========================= */
+
+function drawBlock(x,y,type){
+
+  const px=
+    x*TILE-camX;
+
+  const py=
+    y*TILE-camY;
+
+
+  if(
+    px<-TILE ||
+    py<-TILE ||
+    px>W ||
+    py>H
+  ){
+    return;
+  }
+
+
+  let c=
+    type===blocks.grass
+      ?colors.grass
+      :type===blocks.dirt
+      ?colors.dirt
+      :type===blocks.stone
+      ?colors.stone
+      :type===blocks.wood
+      ?colors.wood
+      :type===blocks.leaves
+      ?colors.leaves
+      :colors.sand;
+
+
+  ctx.fillStyle=c;
+
+  ctx.fillRect(
+    px,
+    py,
+    TILE,
+    TILE
+  );
+
+
+  if(type===blocks.grass){
+
+    ctx.fillStyle="#3d8f32";
+
+    ctx.fillRect(
+      px,
+      py,
+      TILE,
+      6
+    );
+  }
+
+
   if(type===blocks.stone){
-    ctx.fillStyle="rgba(255,255,255,.12)";
-    for(let i=0;i<4;i++) ctx.fillRect(px+(i*9)%28+2,py+((i*13)%25)+2,3,3);
+
+    ctx.fillStyle=
+      "rgba(255,255,255,.12)";
+
+    for(let i=0;i<4;i++){
+
+      ctx.fillRect(
+        px+(i*9)%28+2,
+        py+((i*13)%25)+2,
+        3,
+        3
+      );
+    }
   }
-  ctx.strokeStyle="rgba(0,0,0,.12)"; ctx.strokeRect(px+.5,py+.5,TILE-1,TILE-1);
+
+
+  ctx.strokeStyle=
+    "rgba(0,0,0,.12)";
+
+  ctx.strokeRect(
+    px+.5,
+    py+.5,
+    TILE-1,
+    TILE-1
+  );
 }
 
-function draw() {
-  // Sky gradient
-  const g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,"#5bb8ff"); g.addColorStop(1,"#d7f3ff");
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
 
-  // Clouds
-  ctx.fillStyle="rgba(255,255,255,.75)";
+/* =========================
+   ZIELPUNKT ZEICHNEN
+========================= */
+
+function drawGoal(){
+
+  const x=
+    goal.x-camX;
+
+  const y=
+    goal.y-camY;
+
+
+  /* Boden */
+
+  ctx.fillStyle="#20d060";
+
+  ctx.fillRect(
+    x,
+    y+goal.h-8,
+    goal.w,
+    8
+  );
+
+
+  /* Zielpfosten */
+
+  ctx.fillStyle="#ffffff";
+
+  ctx.fillRect(
+    x+10,
+    y,
+    4,
+    goal.h-8
+  );
+
+
+  /* Zielflagge */
+
+  ctx.fillStyle="#20d060";
+
+  ctx.beginPath();
+
+  ctx.moveTo(x+14,y+2);
+  ctx.lineTo(x+38,y+12);
+  ctx.lineTo(x+14,y+22);
+  ctx.closePath();
+
+  ctx.fill();
+
+
+  /* Leuchteffekt */
+
+  ctx.strokeStyle=
+    "rgba(255,255,255,.8)";
+
+  ctx.lineWidth=2;
+
+  ctx.strokeRect(
+    x-4,
+    y-4,
+    goal.w+8,
+    goal.h+8
+  );
+
+  ctx.lineWidth=1;
+}
+
+
+/* =========================
+   ZEICHNEN
+========================= */
+
+function draw(){
+
+  /* Himmel */
+
+  const g=
+    ctx.createLinearGradient(
+      0,0,0,H
+    );
+
+  g.addColorStop(
+    0,
+    "#5bb8ff"
+  );
+
+  g.addColorStop(
+    1,
+    "#d7f3ff"
+  );
+
+  ctx.fillStyle=g;
+
+  ctx.fillRect(
+    0,0,W,H
+  );
+
+
+  /* Wolken */
+
+  ctx.fillStyle=
+    "rgba(255,255,255,.75)";
+
   for(let i=0;i<8;i++){
-    const x=((i*410-camX*.15)%(W+220))-110, y=55+(i%3)*70;
-    ctx.fillRect(x,y,130,24); ctx.fillRect(x+25,y-15,50,40); ctx.fillRect(x+75,y-8,35,32);
+
+    const x=
+      (
+        (i*410-camX*.15)
+        %(W+220)
+      )-110;
+
+    const y=
+      55+(i%3)*70;
+
+
+    ctx.fillRect(
+      x,y,
+      130,24
+    );
+
+    ctx.fillRect(
+      x+25,y-15,
+      50,40
+    );
+
+    ctx.fillRect(
+      x+75,y-8,
+      35,32
+    );
   }
 
-  const sx=Math.floor(camX/TILE), ex=Math.ceil((camX+W)/TILE);
-  const sy=Math.floor(camY/TILE), ey=Math.ceil((camY+H)/TILE);
-  for(let y=Math.max(0,sy);y<Math.min(WORLD_H,ey);y++)
-    for(let x=Math.max(0,sx);x<Math.min(WORLD_W,ex);x++)
-      if(world[y][x]!==blocks.air) drawBlock(x,y,world[y][x]);
 
-  // Enemies
-  for(const e of enemies) if(e.alive){
-    const x=e.x-camX,y=e.y-camY;
-    ctx.fillStyle="#42a83f"; ctx.fillRect(x,y,e.w,e.h);
-    ctx.fillStyle="#111"; ctx.fillRect(x+5,y+6,4,5); ctx.fillRect(x+15,y+6,4,5);
-    ctx.fillStyle="#245b22"; ctx.fillRect(x+8,y+17,9,4);
+  /* Welt */
+
+  const sx=
+    Math.floor(camX/TILE);
+
+  const ex=
+    Math.ceil(
+      (camX+W)/TILE
+    );
+
+  const sy=
+    Math.floor(camY/TILE);
+
+  const ey=
+    Math.ceil(
+      (camY+H)/TILE
+    );
+
+
+  for(
+    let y=Math.max(0,sy);
+    y<Math.min(WORLD_H,ey);
+    y++
+  ){
+
+    for(
+      let x=Math.max(0,sx);
+      x<Math.min(WORLD_W,ex);
+      x++
+    ){
+
+      if(
+        world[y][x]!==blocks.air
+      ){
+
+        drawBlock(
+          x,
+          y,
+          world[y][x]
+        );
+      }
+    }
   }
 
-  // Player
-  const px=player.x-camX, py=player.y-camY;
-  if(player.invuln===0 || Math.floor(player.invuln/6)%2===0){
-    ctx.fillStyle="#2d6cdf"; ctx.fillRect(px,py+10,player.w,player.h-10);
-    ctx.fillStyle="#f2c49b"; ctx.fillRect(px+3,py,player.w-6,14);
-    ctx.fillStyle="#4b2e1f"; ctx.fillRect(px+2,py,player.w-4,5);
-    ctx.fillStyle="#111"; ctx.fillRect(px+5,py+7,3,3); ctx.fillRect(px+15,py+7,3,3);
+
+  /* Ziel */
+
+  drawGoal();
+
+
+  /* Gegner */
+
+  for(const e of enemies){
+
+    if(!e.alive)continue;
+
+    const x=e.x-camX;
+    const y=e.y-camY;
+
+
+    ctx.fillStyle="#42a83f";
+
+    ctx.fillRect(
+      x,y,
+      e.w,e.h
+    );
+
+
+    ctx.fillStyle="#111";
+
+    ctx.fillRect(
+      x+5,y+6,
+      4,5
+    );
+
+    ctx.fillRect(
+      x+15,y+6,
+      4,5
+    );
+
+
+    ctx.fillStyle="#245b22";
+
+    ctx.fillRect(
+      x+8,y+17,
+      9,4
+    );
   }
 
-  hud.innerHTML = `❤️ Leben: ${player.lives} &nbsp; ⭐ Punkte: ${player.score} &nbsp; 🪙 Münzen: ${coins} &nbsp; 🧱 Blöcke: ${player.blocks}`;
+
+  /* Spieler */
+
+  const px=
+    player.x-camX;
+
+  const py=
+    player.y-camY;
+
+
+  if(
+    player.invuln===0 ||
+    Math.floor(
+      player.invuln/6
+    )%2===0
+  ){
+
+    ctx.fillStyle="#2d6cdf";
+
+    ctx.fillRect(
+      px,
+      py+10,
+      player.w,
+      player.h-10
+    );
+
+
+    ctx.fillStyle="#f2c49b";
+
+    ctx.fillRect(
+      px+3,
+      py,
+      player.w-6,
+      14
+    );
+
+
+    ctx.fillStyle="#4b2e1f";
+
+    ctx.fillRect(
+      px+2,
+      py,
+      player.w-4,
+      5
+    );
+
+
+    ctx.fillStyle="#111";
+
+    ctx.fillRect(
+      px+5,
+      py+7,
+      3,3
+    );
+
+    ctx.fillRect(
+      px+15,
+      py+7,
+      3,3
+    );
+  }
 }
 
-function restart() {
-  player.x=6*TILE; player.y=(surface[6]-3)*TILE; player.vx=0; player.vy=0;
-  player.lives=3; player.score=0; player.blocks=12; player.invuln=0; coins=0; selectedBlock=blocks.dirt; document.querySelectorAll(".slot").forEach((s,i)=>s.classList.toggle("selected",i===0));
-  enemies.forEach((e,i)=>{
-    const x=18+Math.floor(Math.random()*110);
-    e.x=x*TILE; e.y=(surface[x]-2)*TILE; e.vx=0; e.vy=0; e.alive=true; e.dir=i%2?1:-1;
-  });
+
+/* =========================
+   NACHRICHT
+========================= */
+
+function showMessage(t){
+
+  messageEl.textContent=t;
+
+  messageEl.style.opacity="1";
+
+  messageTimer=100;
 }
 
-function loop() { update(); draw(); requestAnimationFrame(loop); }
+
+/* =========================
+   AUTOSPEICHERN
+========================= */
+
+addEventListener(
+  "beforeunload",
+  ()=>{
+    saveGame();
+  }
+);
+
+
+/* =========================
+   SPIELSTART
+========================= */
+
+updateContinueButton();
+
+showMainMenu();
+
+
+/* =========================
+   HAUPTSCHLEIFE
+========================= */
+
+function loop(){
+
+  update();
+
+  draw();
+
+  requestAnimationFrame(loop);
+}
+
 loop();
+
 </script>
+
 </body>
 </html>
