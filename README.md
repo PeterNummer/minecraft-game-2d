@@ -85,10 +85,6 @@ Auf Geräten mit Touchscreen werden automatisch Touch-Steuerungen angezeigt.
 - 🟩 Blätter
 - 🟨 Sand
 
-## 🌐 Veröffentlichung
-
-Das Spiel kann kostenlos über **GitHub Pages** veröffentlicht und anschließend auf einer Website eingebunden werden.
-
 ## 🤖 Entwicklung mit KI-Unterstützung
 
 Dieses Projekt wurde mit Unterstützung von KI erstellt.
